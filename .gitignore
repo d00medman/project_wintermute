@@ -1,0 +1,4 @@
+*.pyc
+wintermute_prototype_venv
+nintaco/logs
+nintaco/system
