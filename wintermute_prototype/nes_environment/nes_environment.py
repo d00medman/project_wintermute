@@ -108,8 +108,8 @@ class NESEnvironment():
 
     def decode_and_normalize_message(self, message):
         decoded_message = message.value.decode('utf-8').replace(']','').replace('[','')
-        print('decoded message type: ', [type(i) for i in decoded_message.split(",")])
-        print('decoded message: ', [i for i in decoded_message.split(",")])
+        # print('decoded message type: ', [type(i) for i in decoded_message.split(",")])
+        # print('decoded message: ', [i for i in decoded_message.split(",")])
         return [int(i) for i in decoded_message.split(",")]
 
 if __name__ == "__main__":

@@ -1,5 +1,9 @@
 import numpy as np
 
+'''
+TODO: encapsulate as a class
+'''
+
 def create_pixel_grid(screen_data_capture):
     """
     The screen data capture is a raw string. The nes drew graphics by essentially going pixel by pixel across the screen from top.
@@ -7,7 +11,7 @@ def create_pixel_grid(screen_data_capture):
     Nintaco recovers the pixels in a single stream, as though the scanline never broke.
     Our first step, as seen here, is to do this: produce an array of pixel rows
 
-    At start of this step pixels [33, 26, 41, 20, 15, 15, 41, 41, 15, 15, 15, 15, 15, 15, 15, 15]
+    At start of this step pixels = [33, 26, 41, 20, 15, 15, 41, 41, 15, 15, 15, 15, 15, 15, 15, 15]
     at end of this step pixels = [
         [33, 26, 41, 20],
         [15, 15, 41, 41],

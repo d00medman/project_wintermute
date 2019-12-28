@@ -9,6 +9,11 @@ import numpy as np
 import time
 from shrine_of_fiends_outskirts import ShrineOfFiendsEnv
 
+
+'''
+TODO: fold these into Ulysses
+'''
+
 """
 Qlearning is an off policy learning python implementation.
 This is a python implementation of the qlearning algorithm in the Sutton and
