@@ -6,17 +6,18 @@ import gym
 import numpy as np
 
 '''
-Ulysses; the agent element of the Amalgam. At present, ulysses can interface with a Q learning environment.
+big remaining TODO: fully understand relation of agent and "environment. Rationalize these. Figuring out how this works
+will likely point me towards more general case: how 
 
-For the prototype, the plan ulysses is able to derive leads agent to shrine
+Also, take video of project thus far.
+
+Next step is grid square identification (likely to need its own system)
 '''
 
 
 class Ulysses:
 
-    def __init__(self, start_location=[9, 8]):
-        self.current_location = start_location
-        self.start_location = start_location
+    def __init__(self):
         self.actions = {
             0: 'UP',
             1: 'DOWN',
@@ -28,21 +29,19 @@ class Ulysses:
         self.epsilon = 0.9
         self.episodes = 1000
         self.max_steps = 250
-        # self.map = None
         self.env = None
         self.Q = None
-        print('Ulyssess initiated')
+        print('Ulysses initiated')
 
     '''
-    Learns best course of action through a map, increments plan by 4 to be executable in the nes environment, jsonifies the action plan and returns it
-    for use in the communication nexus going back to the nes environment
+    Learns best course of action through a map, increments plan by 4 to be executable in the nes environment, 
+    transforms the action plan into JSON and returns it for use in the communication nexus going back to the 
+    NES environment
     '''
     def stream_q_plan(self, visible_environment):
         self.q_learn_environment(visible_environment)
-        q_plan = self.get_q_plan(self.Q, self.env)
-        # are these layers of translation actually needed?
-        # return json.dumps([int(str(a+4)) for a in q_plan]).encode('utf-8')
 
+        q_plan = self.get_q_plan(self.Q, self.env)
         return json.dumps([int(a) + 4 for a in q_plan]).encode('utf-8')
 
     '''
@@ -50,7 +49,6 @@ class Ulysses:
     '''
     def q_learn_environment(self, visible_environment):
         print('Q learning action plan for passed environment')
-        # self.map = map
         self.env = ShrineOfFiendsEnv(visible_environment, self.actions)
         self.Q = self.learn_q()
 
@@ -65,20 +63,23 @@ class Ulysses:
             self.env.s = 158
             s = self.env.s
 
-            a = self.epsilon_greedy(Q, n_actions, s) # A is an action selected under the ep-greedy policy
+            # a is an action selected under the epsilon-greedy policy
+            a = self.epsilon_greedy_action_selection(Q, n_actions, s)
             # t is the current time step
             t = 0
             total_reward = 0
-            done = False
             while t < self.max_steps:
                 if render:
                     self.env.render()
                 t += 1
-                # s_ = next state, a_ = next action
-                [(prob, s_, reward, done)] = self.env.P[s][a] #env.step(a) #gets a tuple containing next state, next reward, whether the state was terminal, and value named info of unknown use
+                '''
+                gets a tuple containing probability, the numeric next state (s_), the reward at s_ next reward and 
+                whether the state was terminal
+                '''
+                [(prob, s_, reward, done)] = self.env.P[s][a]  # env.step(a)
                 # Take step, then administer reward
                 total_reward += reward
-                # next action is the one whose next state has the highest utility
+                # next action (a_) is the one whose next state has the highest utility
                 a_ = np.argmax(Q[s_, :])
                 if done:
                     Q[s, a] += self.alpha * (reward - Q[s, a])
@@ -106,7 +107,7 @@ class Ulysses:
         elif type == "zeros":
             return np.zeros((s, a))
 
-    def epsilon_greedy(self, Q, n_actions, s, train=False):
+    def epsilon_greedy_action_selection(self, Q, n_actions, s, train=False):
         """
         @param Q Q values state x action -> value
         @param epsilon boldness in exploration
@@ -124,19 +125,20 @@ class Ulysses:
     '''
     def get_q_plan(self, Q, env):
         action_plan = []
-        # epsilon = 0
+
+        # Same code for state resetting. TODO: encapsulate and properly affix this
         env.s = 158
         s = env.s
 
         n_actions = env.nA
         moves = 0
         while True:
-            time.sleep(1)
+            # time.sleep(1)
             if moves == 0:
                 print('initial state')
                 env.render()
             moves += 1
-            a = self.epsilon_greedy(Q, n_actions, s, train=True)
+            a = self.epsilon_greedy_action_selection(Q, n_actions, s, train=True)
             s, reward, done, info = env.step(a)
             action_plan.append(a)
             if done:
