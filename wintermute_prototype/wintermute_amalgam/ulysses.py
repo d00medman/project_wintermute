@@ -1,8 +1,8 @@
 # from navigation import qlearning, get_q_plan
 from shrine_of_fiends_outskirts import ShrineOfFiendsEnv
 import json
-import time
-import gym
+# import time
+# import gym
 import numpy as np
 
 '''
@@ -38,6 +38,7 @@ class Ulysses:
     transforms the action plan into JSON and returns it for use in the communication nexus going back to the 
     NES environment
     '''
+
     def stream_q_plan(self, visible_environment):
         self.q_learn_environment(visible_environment)
 
@@ -47,6 +48,7 @@ class Ulysses:
     '''
     Agent runs Q learning black box to create an output plan which it sends to the emulator to be enacted
     '''
+
     def q_learn_environment(self, visible_environment):
         print('Q learning action plan for passed environment')
         self.env = ShrineOfFiendsEnv(visible_environment, self.actions)
@@ -123,7 +125,10 @@ class Ulysses:
     '''
     Passed in a learned Q function for an environment, runs through environment to find route to reward
     '''
+
     def get_q_plan(self, Q, env):
+        if self.Q is None or self.env == None:
+            return []
         action_plan = []
 
         # Same code for state resetting. TODO: encapsulate and properly affix this
@@ -152,3 +157,22 @@ class Ulysses:
                 env.render()
                 break
         return action_plan
+
+
+if __name__ == '__main__':
+    vis_env = [
+        [26, 26, 26, 26, 33, 33, 33, 33, 33, 33, 33, 33, 33, 33, 33],
+        [26, 26, 15, 15, 26, 26, 26, 26, 33, 33, 33, 33, 33, 33, 33],
+        [26, 26, 16, 15, 26, 26, 26, 26, 26, 26, 26, 33, 33, 33, 33],
+        [25, 25, 25, 25, 25, 25, 25, 25, 15, 26, 26, 26, 33, 33, 33],
+        [15, 25, 25, 25, 25, 25, 25, 25, 25, 15, 26, 33, 33, 33, 33],
+        [26, 15, 15, 15, 25, 25, 25, 25, 15, 26, 33, 33, 33, 33, 33],
+        [33, 26, 15, 26, 15, 25, 25, 15, 15, 26, 33, 33, 33, 33, 33],
+        [33, 33, 33, 33, 26, 15, 25, 25, 15, 26, 33, 33, 33, 33, 33],
+        [33, 33, 33, 33, 33, 26, 15, 25, 25, 15, 33, 33, 33, 33, 33],
+        [33, 33, 33, 33, 33, 33, 26, 15, 15, 15, 33, 33, 33, 33, 33],
+        [33, 33, 33, 33, 33, 33, 26, 26, 26, 26, 33, 33, 33, 33, 33],
+        [33, 33, 33, 33, 33, 33, 26, 26, 26, 26, 26, 33, 33, 33, 33],
+        [33, 33, 33, 33, 33, 26, 26, 26, 26, 26, 26, 33, 33, 33, 33]
+    ]
+    Ulysses().q_learn_environment(vis_env)
