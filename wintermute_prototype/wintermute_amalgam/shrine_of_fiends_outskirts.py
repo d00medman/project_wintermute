@@ -10,13 +10,28 @@ RIGHT = 3
 
 '''
 So is this really just an internal representation of some sort? My own mind body problem remains unanswered.
+
+probably worth noting exactly what is inherited from the discrete env
+
+discrete env -> gridworld -> final fantasy gridworld
+
+big TODO: determine which code belongs in which of the two listed buckets.
 '''
 
 
 class ShrineOfFiendsEnv(discrete.DiscreteEnv):
 
+    # defines render modes. unsure if actually used
     metadata = {'render.modes': ['human', 'ansi']}
 
+    """
+    Initialize gridworld environment representation for agent
+    
+    @param composite_grid a 13 x 15 matrix of scalar values representing the most common pixel color appearing on the 
+           screen
+    @param actions scalar values of actions the agent is capable of taking in the environment,
+    @param shape a tuple formatted [y, x] which is used to construct the scalar state ID matrix
+    """
     def __init__(self, composite_grid, actions, shape=[13, 15]):
         self.shape = np.array(shape)
         '''
@@ -131,7 +146,8 @@ class ShrineOfFiendsEnv(discrete.DiscreteEnv):
             '''
             Crux of splitting generic rules from general purpose gridworld construction here.
             
-            Code is pretty badly entangled here. Almost certainly worth expanding
+            Code is pretty badly entangled here. Almost certainly worth expanding into more verbose forms. These verbose
+            forms can then be tagged for the general purpose representation or the FF specific one
             '''
             is_done = lambda y, x: self.composite_grid[y][x] == 16
             is_water_tile = lambda y, x: self.composite_grid[y][x] == 33
@@ -170,9 +186,10 @@ class ShrineOfFiendsEnv(discrete.DiscreteEnv):
         super(ShrineOfFiendsEnv, self).__init__(nS, nA, P, isd)
 
     '''
-    Different types of render mode can probably be created as needed?
+    Prints a representation of the current environmental state
     
-    Probably should live at the top level class
+    @param mode: doesn't actually seem to be used, probably related to metadata field on top. unclear to me what ansi is
+                 as a representation mode, or why I would want to represent the environment in ansi
     '''
     def render(self, mode='human'):
         outfile = sys.stdout
