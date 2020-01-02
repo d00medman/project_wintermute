@@ -4,9 +4,11 @@ import numpy as np
 TODO: encapsulate as a class
 '''
 
+
 def create_pixel_grid(screen_data_capture):
     """
-    The screen data capture is a raw string. The nes drew graphics by essentially going pixel by pixel across the screen from top.
+    The screen data capture is a raw string. The nes drew graphics by essentially going pixel by pixel across the screen f
+    rom top.
     Every 256 pixels, a new row would be displayed on tv
     Nintaco recovers the pixels in a single stream, as though the scanline never broke.
     Our first step, as seen here, is to do this: produce an array of pixel rows
@@ -77,16 +79,17 @@ def create_pixel_grid(screen_data_capture):
     return np.array(grid)
 
 
-
-
 """
 initial effort to crunch the massive state data set into something more immediately usable
 
 These two methods Produce a new grid which retains the same shape but has the most common number in each square.
 I have found this method effective for checking my own work, as it does allow a (quite rough) grid to be drawn
 """
+
+
 def reduce_pixel_square(target):
     return np.argmax(np.bincount(np.array([np.argmax(np.bincount(np.array(row))) for row in target if len(row) > 0])))
+
 
 def reduce_grid(pixel_grid):
     reduced_grid = []

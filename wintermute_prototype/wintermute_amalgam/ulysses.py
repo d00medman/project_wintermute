@@ -1,42 +1,51 @@
-# from navigation import qlearning, get_q_plan
 from shrine_of_fiends_outskirts import ShrineOfFiendsEnv
 import json
-# import time
-# import gym
 import numpy as np
 
 '''
-big remaining TODO: fully understand relation of agent and "environment. Rationalize these. Figuring out how this works
-will likely point me towards more general case: how 
-
-Also, take video of project thus far.
-
-Next step is grid square identification (likely to need its own system)
+Annotation of methods for agent complete. Need to brainstorm what directions improvement is needed in
 '''
 
 
 class Ulysses:
+    """
+    Initialize agent and hyperparameters
 
-    def __init__(self):
+    Initializes Q and environment as none; sets these upon invocation of q_learn_environment
+
+    @param alpha: learning rate
+    @param gamma: discount rate
+    @param epsilon: greed
+    @param episodes_for_training: how many episodes to run in the training of Q
+    @max_steps_per_episode: How many steps are taken in each of said episodes
+    """
+    def __init__(self, alpha=0.4, gamma=0.999, epsilon=0.9, episodes_for_training=1000, max_steps_per_episode=250):
+        # TODO: determine how to make action scalar values match those that are needed by the emulator
         self.actions = {
             0: 'UP',
             1: 'DOWN',
             2: 'LEFT',
             3: 'RIGHT'
         }
-        self.alpha = 0.4
-        self.gamma = 0.999
-        self.epsilon = 0.9
-        self.episodes = 1000
-        self.max_steps = 250
+        self.alpha = alpha
+        self.gamma = gamma
+        self.epsilon = epsilon
+        self.episodes = episodes_for_training
+        self.max_steps = max_steps_per_episode
         self.env = None
         self.Q = None
         print('Ulysses initiated')
 
     '''
-    Learns best course of action through a map, increments plan by 4 to be executable in the nes environment, 
-    transforms the action plan into JSON and returns it for use in the communication nexus going back to the 
-    NES environment
+    invokes q_learn_environment, the derives a plan of actions (q_plan) via get_q_plan.
+    
+    Adds 4 to the scalar action values of the returned Q plan and encodes this new value in utf 8 to be streamed to 
+    kafka
+    
+    Frankly might make more sense to have the latter done in the communication nexus, as the json transformation is only
+    relevant in said context
+    
+    @param visible_environment a matrix of scalar values representing the game environment. 
     '''
 
     def stream_q_plan(self, visible_environment):
@@ -46,7 +55,9 @@ class Ulysses:
         return json.dumps([int(a) + 4 for a in q_plan]).encode('utf-8')
 
     '''
-    Agent runs Q learning black box to create an output plan which it sends to the emulator to be enacted
+    initializes the env (the visible_environment for which Ulysses seeks a solution), then learns q via learn_q
+    
+    @param visible_environment a matrix of scalar values representing the game environment. 
     '''
 
     def q_learn_environment(self, visible_environment):
@@ -54,6 +65,14 @@ class Ulysses:
         self.env = ShrineOfFiendsEnv(visible_environment, self.actions)
         self.Q = self.learn_q()
 
+    '''
+    The meat of the Q learning algorithm
+    
+    For sure needs better documentation and illustration of contours of data flow (similar to what was done in the env)
+    
+    @param render: a flag denoting whether the agent should output his internal representation of the environment at 
+                   certain points
+    '''
     def learn_q(self, render=False):
         n_states, n_actions = self.env.nS, self.env.nA
 
@@ -62,7 +81,7 @@ class Ulysses:
         for episode in range(self.episodes):
 
             # state resets at start of each episode
-            self.env.s = 158
+            self.env.s = 112
             s = self.env.s
 
             # a is an action selected under the epsilon-greedy policy
@@ -96,26 +115,41 @@ class Ulysses:
         print(f"Final Episode #{episode} complete. Q length: {len(Q)}")
         return Q
 
-    def init_q(self, s, a, type="ones"):
-        """
-        @param s the number of states
-        @param a the number of actions
-        @param type random, ones or zeros for the initialization
-        """
+    '''
+    initializes the state value function, Q to a numpy matrix with a shape determined by a tuple containing
+    the number of actions and number of states. Scalar values for this matrix determined by type variable
+    
+    @param num_states the number of states
+    @param num_actions the number of actions
+    @param type Sets scalar values for matrix entries
+    '''
+
+    def init_q(self, num_states, num_actions, type="ones"):
         if type == "ones":
-            return np.ones((s, a))
+            return np.ones((num_states, num_actions))
         elif type == "random":
-            return np.random.random((s, a))
+            return np.random.random((num_states, num_actions))
         elif type == "zeros":
-            return np.zeros((s, a))
+            return np.zeros((num_states, num_actions))
+
+    '''
+    Selects an action.
+    
+    If the train parameter is set to true, or a random number lower than the epsilon hyperparameter is rolled, select
+    the action with the highest Q value for the given state
+    
+    Otherwise, if the train param is off and epsilon is higher than the rolled number, select a random action
+    
+    Would for sure like to change this so the actions selected are 4-7, rather than selecting 0-3 and adding 4
+    when sending the message 
+    
+    @param Q: state value tuple array
+    @param n_actions: scalar values representing actions available to agent
+    @param s: a scalar state for which we are selecting an action
+    @param train: flag which, when set ensures that action is selected on basis of argmax Q for s
+    '''
 
     def epsilon_greedy_action_selection(self, Q, n_actions, s, train=False):
-        """
-        @param Q Q values state x action -> value
-        @param epsilon boldness in exploration
-        @param s number of states
-        @param train if true then no random actions selected
-        """
         if train or np.random.rand() < self.epsilon:
             action = np.argmax(Q[s, :])
         else:
@@ -123,16 +157,20 @@ class Ulysses:
         return action
 
     '''
-    Passed in a learned Q function for an environment, runs through environment to find route to reward
+    Passed in a learned Q function for an environment, runs through environment to find route to reward. Returns a list,
+    action_plan of all scalar action values needed to attain reward
+    
+    @param Q: A learned Q array
+    @param env: the environment representation on which Q was learned
     '''
-
     def get_q_plan(self, Q, env):
-        if self.Q is None or self.env == None:
-            return []
+        # TODO: figure out guardrail plan and generalize to rest of system
+        # if self.Q is None or self.env is None:
+        #     return []
         action_plan = []
 
         # Same code for state resetting. TODO: encapsulate and properly affix this
-        env.s = 158
+        env.s = 112
         s = env.s
 
         n_actions = env.nA
@@ -159,6 +197,11 @@ class Ulysses:
         return action_plan
 
 
+'''
+If this script is run from the command line, learn Q via a hardcoded representation of the shrine of fiends state
+
+primarily for purposes od debugging
+'''
 if __name__ == '__main__':
     vis_env = [
         [26, 26, 26, 26, 33, 33, 33, 33, 33, 33, 33, 33, 33, 33, 33],
