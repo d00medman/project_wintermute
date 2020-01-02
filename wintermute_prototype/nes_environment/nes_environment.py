@@ -33,7 +33,7 @@ class NESEnvironment():
         self.launch()
 
     '''
-    Launches the connection API
+    Adds Nintaco remote API listeners then runs the remote API
     '''
     def launch(self):
         self.add_listeners()
@@ -41,7 +41,7 @@ class NESEnvironment():
         self.api.run()
 
     '''
-    Adds listeners to API for interacting with system
+    Adds listeners for remote API interactions with Nintaco emulator
     '''
     def add_listeners(self):
         self.api.addFrameListener(self.renderFinished)
@@ -49,18 +49,32 @@ class NESEnvironment():
         self.api.addDeactivateListener(self.apiDisabled)
         self.api.addStopListener(self.dispose)
 
+    '''
+    Fired when remote API is initially enabled
+    '''
     def apiEnabled(self):
         print("API enabled")
 
+    '''
+    Fired when remote API is disabled
+    '''
     def apiDisabled(self):
         print("API disabled")
 
+    '''
+    Fired when the API is stopped. Unclear what difference between disabled and stopped is
+    '''
     def dispose(self):
         print("API stopped")
 
     '''
-    Every second, try to read a message from the consumer. If none are available, read the first one
-    then break
+    Fires once per frame.
+    
+    Only takes action at time point set by constructor. This defaults to once per second
+    
+    If there is no navigation plan set, runs the listen method
+    
+    If there is a navigation plan set, pop and execute the first action of the navigation plan 
     '''
     def renderFinished(self):
         if self.frame_count % (self.frame_cutoff * self.throttle_rate) == 0:
@@ -74,14 +88,15 @@ class NESEnvironment():
 
         self.frame_count += 1
 
+    '''
+    Writes the result of self.get_raw_pixels in a message to the emulator_to_amalgam kafka topic
+    '''
     def send_pixels_to_amalgam(self):
         result = self.producer.send('emulator_to_amalgam', json.dumps(self.get_raw_pixels()))
         print('Sent message to nexus at frame count', self.frame_count)
 
     '''
-    Read and act on a single message. When a message is seen, send a message to the other topic
-
-    Needs to be kickstarted from kafka console. Part of encapsulation
+    Definitley some screwiness here, can probably have a more efficient throttle going
     '''
     def listen(self):
         print('no navigation_plan detected. listening for action at frame: ', self.frame_count)
@@ -101,11 +116,19 @@ class NESEnvironment():
             break # break means we only interact w/first message
         print 'after iteration over consumer block'
 
+    '''
+    creates a one dimension array with 61440 entries, then uses this to get the pixels on screen from the remote API
+    '''
     def get_raw_pixels(self):
         pixels = [0] * (256*240)
         self.api.getPixels(pixels)
         return pixels
 
+    '''
+    Returns a list of integers from a passed message
+    
+    @param message: a json string recovered from kafka; this method transforms the string into an integer array
+    '''
     def decode_and_normalize_message(self, message):
         decoded_message = message.value.decode('utf-8').replace(']','').replace('[','')
         # print('decoded message type: ', [type(i) for i in decoded_message.split(",")])
