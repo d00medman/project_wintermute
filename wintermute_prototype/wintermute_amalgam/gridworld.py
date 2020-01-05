@@ -23,14 +23,31 @@ class GridWorld(discrete.DiscreteEnv):
     @param shape a tuple formatted [y, x] which is used to construct the scalar state ID matrix
     """
 
-    def __init__(self, actions=default_actions, shape=default_shape, terminal_state=47, agent_start_state=112):
+    def __init__(self, actions=default_actions, shape=default_shape, terminal_state=47):
         self.shape = np.array(shape)
 
         nS = np.prod(self.shape)
         nA = len(actions)
+        self.terminal_state = terminal_state
 
-        MAX_Y = shape[0]
-        MAX_X = shape[1]
+        P = self.generate_transition_tuples(actions, nS)
+
+        # Initial state distribution is uniform
+        isd = np.ones(nS) / nS
+
+        # We expose the model of the environment for educational purposes
+        # This should not be used in any model-free learning algorithm
+        self.P = P
+
+        # self.s is the scalar value of the agent start point on initialization
+        # Still dealing with a jump, unsure of why
+        self.s = 112
+
+        super(GridWorld, self).__init__(nS, nA, P, isd)
+
+    def generate_transition_tuples(self, actions, nS):
+        MAX_Y = self.shape[0]
+        MAX_X = self.shape[1]
 
         # Initialize transition probabilities and rewards
         P = {}
@@ -64,7 +81,7 @@ class GridWorld(discrete.DiscreteEnv):
         Or, that the first one can be a generic gridworld (which can be submitted to the gym), then I can
         create an extension which overlays the rules of the FF worldmap
         '''
-        grid = np.arange(nS).reshape(shape)
+        grid = np.arange(nS).reshape(self.shape)
         '''
         Iterator definition: https://docs.scipy.org/doc/numpy/reference/generated/numpy.nditer.html
 
@@ -114,13 +131,13 @@ class GridWorld(discrete.DiscreteEnv):
             '''
             P[s] = {actions.get(action): [] for action in actions}
 
-            is_done = lambda current_state: current_state == terminal_state
+            is_done = self.is_state_terminal(s)
 
-            reward = 1.0 if is_done(s) else -1.0
+            reward = 1.0 if is_done else -1.0
 
             for action in actions:
                 action_scalar = actions.get(action)
-                if is_done(s):
+                if is_done:
                     P[s][action_scalar] = [(1.0, s, reward, True)]
                 else:
                     if action == 'UP':
@@ -135,22 +152,13 @@ class GridWorld(discrete.DiscreteEnv):
                         print('non_default action, currently unable to handle; setting next state to current state')
                         next_state_scalar = s
 
-                    P[s][action_scalar] = [(1.0, next_state_scalar, reward, is_done(s))]
+                    P[s][action_scalar] = [(1.0, next_state_scalar, reward, is_done)]
 
             it.iternext()
+        return P
 
-        # Initial state distribution is uniform
-        isd = np.ones(nS) / nS
-
-        # We expose the model of the environment for educational purposes
-        # This should not be used in any model-free learning algorithm
-        self.P = P
-
-        # self.s is the scalar value of the agent start point on initialization
-        # Still dealing with a jump
-        self.s = 112
-
-        super(GridWorld, self).__init__(nS, nA, P, isd)
+    def is_state_terminal(self, state_scalar):
+        return state_scalar == self.terminal_state
 
     '''
     Prints a representation of the current environmental state

@@ -1,6 +1,7 @@
 from shrine_of_fiends_outskirts import ShrineOfFiendsEnv
 import json
 import numpy as np
+from gridworld import GridWorld
 
 '''
 Annotation of methods for agent complete. Need to brainstorm what directions improvement is needed in
@@ -22,10 +23,10 @@ class Ulysses:
     def __init__(self, alpha=0.4, gamma=0.999, epsilon=0.9, episodes_for_training=1000, max_steps_per_episode=250):
         # TODO: determine how to make action scalar values match those that are needed by the emulator
         self.actions = {
-            0: 'UP',
-            1: 'DOWN',
-            2: 'LEFT',
-            3: 'RIGHT'
+            'UP': 0,
+            'DOWN': 1,
+            'LEFT': 2,
+            'RIGHT': 3
         }
         self.alpha = alpha
         self.gamma = gamma

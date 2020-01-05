@@ -200,6 +200,7 @@ class ShrineOfFiendsEnv(discrete.DiscreteEnv):
     def render(self, mode='human'):
         outfile = sys.stdout
 
+        # output = ''
         for s in range(self.nS):
             position = np.unravel_index(s, self.shape)
             # Player character location
