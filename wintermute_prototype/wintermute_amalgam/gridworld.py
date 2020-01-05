@@ -112,11 +112,9 @@ class GridWorld(discrete.DiscreteEnv):
                 }
             }
             '''
-            # for action in actions:
-            #     action_scalar = actions.get(action).get('scalar_value')
             P[s] = {actions.get(action): [] for action in actions}
 
-            is_done = lambda s: s == terminal_state
+            is_done = lambda current_state: current_state == terminal_state
 
             reward = 1.0 if is_done(s) else -1.0
 
@@ -149,7 +147,8 @@ class GridWorld(discrete.DiscreteEnv):
         self.P = P
 
         # self.s is the scalar value of the agent start point on initialization
-        self.s = agent_start_state
+        # Still dealing with a jump
+        self.s = 112
 
         super(GridWorld, self).__init__(nS, nA, P, isd)
 
@@ -163,11 +162,9 @@ class GridWorld(discrete.DiscreteEnv):
     def render(self, mode='human'):
         outfile = sys.stdout
 
-        output = " 0 "
         for s in range(self.nS):
             position = np.unravel_index(s, self.shape)
-            # output == " 0 "
-            # Player character location
+            # Agent location
             if self.s == s:
                 output = " @ "
             # Goal state
