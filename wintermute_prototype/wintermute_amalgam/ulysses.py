@@ -98,7 +98,9 @@ class Ulysses:
                 gets a tuple containing probability, the numeric next state (s_), the reward at s_ next reward and 
                 whether the state was terminal
                 '''
-                [(prob, s_, reward, done)] = self.env.step(a) #self.env.P[s][a]  # env.step(a)
+                # [(prob, s_, reward, done)] = self.env.P[s][a]  # env.step(a)
+                s_, reward, done, prob = self.env.step(a)
+
                 # Take step, then administer reward
                 total_reward += reward
                 # next action (a_) is the one whose next state has the highest utility
