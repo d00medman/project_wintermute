@@ -2,59 +2,29 @@ import numpy as np
 import sys
 from gym.envs.toy_text import discrete
 
-UP = 0
-DOWN = 1
-LEFT = 2
-RIGHT = 3
+default_actions = {
+    'UP': 0,
+    'DOWN': 1,
+    'LEFT': 2,
+    'RIGHT': 3
+}
+
+default_shape = [13, 15]
 
 
-'''
-So is this really just an internal representation of some sort? My own mind body problem remains unanswered.
-
-probably worth noting exactly what is inherited from the discrete env
-
-discrete env -> gridworld -> final fantasy gridworld
-
-big TODO: determine which code belongs in which of the two listed buckets.
-'''
-
-
-class ShrineOfFiendsEnv(discrete.DiscreteEnv):
-
+class GridWorld(discrete.DiscreteEnv):
     # defines render modes. unsure if actually used. Going to keep in place for time being
     metadata = {'render.modes': ['human', 'ansi']}
 
     """
-    Initialize gridworld environment representation for agent
-    
-    @param composite_grid a 13 x 15 matrix of scalar values representing the most common pixel color appearing on the 
-           screen
+    Generic gridworld, a problem frequently used to illustrate algorithms by Sutton and Barto
+
     @param actions scalar values of actions the agent is capable of taking in the environment,
     @param shape a tuple formatted [y, x] which is used to construct the scalar state ID matrix
     """
-    def __init__(self, composite_grid, actions, shape=[13, 15]):
+
+    def __init__(self, actions=default_actions, shape=default_shape, terminal_state=47, agent_start_state=112):
         self.shape = np.array(shape)
-        '''
-        shape format = [y, x]
-        
-        shape of composite grid for Shrine of Fiends test:
-        [
-            [26, 26, 26, 26, 33, 33, 33, 33, 33, 33, 33, 33, 33, 33, 33], 
-            [26, 26, 15, 15, 26, 26, 26, 26, 33, 33, 33, 33, 33, 33, 33], 
-            [26, 26, 16, 15, 26, 26, 26, 26, 26, 26, 26, 33, 33, 33, 33], 
-            [25, 25, 25, 25, 25, 25, 25, 25, 15, 26, 26, 26, 33, 33, 33], 
-            [15, 25, 25, 25, 25, 25, 25, 25, 25, 15, 26, 33, 33, 33, 33], 
-            [26, 15, 15, 15, 25, 25, 25, 25, 15, 26, 33, 33, 33, 33, 33], 
-            [33, 26, 15, 26, 15, 25, 25, 15, 15, 26, 33, 33, 33, 33, 33], 
-            [33, 33, 33, 33, 26, 15, 25, 25, 15, 26, 33, 33, 33, 33, 33], 
-            [33, 33, 33, 33, 33, 26, 15, 25, 25, 15, 33, 33, 33, 33, 33], 
-            [33, 33, 33, 33, 33, 33, 26, 15, 15, 15, 33, 33, 33, 33, 33], 
-            [33, 33, 33, 33, 33, 33, 26, 26, 26, 26, 33, 33, 33, 33, 33], 
-            [33, 33, 33, 33, 33, 33, 26, 26, 26, 26, 26, 33, 33, 33, 33], 
-            [33, 33, 33, 33, 33, 26, 26, 26, 26, 26, 26, 33, 33, 33, 33]
-        ]
-        '''
-        self.composite_grid = composite_grid
 
         nS = np.prod(self.shape)
         nA = len(actions)
@@ -65,7 +35,8 @@ class ShrineOfFiendsEnv(discrete.DiscreteEnv):
         # Initialize transition probabilities and rewards
         P = {}
         '''
-        
+        Grid when built with default shape
+
         [
                   x=0  x=1 x=2 x=3 x=4 x=5 x=6 x=7 x=8 x=9 10  11  12  13  14 
          y = 0   [  0   1   2   3   4   5   6   7   8   9  10  11  12  13  14], 
@@ -82,13 +53,13 @@ class ShrineOfFiendsEnv(discrete.DiscreteEnv):
          y = 11  [165 166 167 168 169 170 171 172 173 174 175 176 177 178 179], 
          y = 12  [180 181 182 183 184 185 186 187 188 189 190 191 192 193 194]
         ]
-        
+
         112 [7, 7] as starting point? Need general solution for start state
-        
+
         two distinct representations of state: 
         - composite grid containing most common pixel scalar value
         - grid contains scalar state s = (y * 15) + x
-        
+
         I am close to 100% certain that these two representations can be merged
         Or, that the first one can be a generic gridworld (which can be submitted to the gym), then I can
         create an extension which overlays the rules of the FF worldmap
@@ -96,7 +67,7 @@ class ShrineOfFiendsEnv(discrete.DiscreteEnv):
         grid = np.arange(nS).reshape(shape)
         '''
         Iterator definition: https://docs.scipy.org/doc/numpy/reference/generated/numpy.nditer.html
-        
+
         multi_index causes a multi-index, or a tuple of indices with one per iteration dimension, to be tracked.
         '''
         it = np.nditer(grid, flags=['multi_index'])
@@ -112,7 +83,7 @@ class ShrineOfFiendsEnv(discrete.DiscreteEnv):
             '''
             structure of tuples contained in the sub-dictionaries in p
             [(probability, next scalar state (s_), reward at s_, terminality of state)]
-            
+
             p = {
                 0:{
                     0:[(1.0, 0, -1.0, False)],
@@ -141,41 +112,32 @@ class ShrineOfFiendsEnv(discrete.DiscreteEnv):
                 }
             }
             '''
-            P[s] = {a: [] for a in actions}
+            # for action in actions:
+            #     action_scalar = actions.get(action).get('scalar_value')
+            P[s] = {actions.get(action): [] for action in actions}
 
-            '''
-            Crux of splitting generic rules from general purpose gridworld construction here.
-            
-            Code is pretty badly entangled here. Almost certainly worth expanding into more verbose forms. These verbose
-            forms can then be tagged for the general purpose representation or the FF specific one
-            '''
-            is_done = lambda y, x: self.composite_grid[y][x] == 16
-            is_water_tile = lambda y, x: self.composite_grid[y][x] == 33
+            is_done = lambda s: s == terminal_state
 
-            reward = 1.0 if is_done(y, x) else -1.0
+            reward = 1.0 if is_done(s) else -1.0
 
-            # We're stuck in a terminal state
-            if is_done(y, x):
-                P[s][UP] = [(1.0, s, reward, True)]
-                P[s][RIGHT] = [(1.0, s, reward, True)]
-                P[s][DOWN] = [(1.0, s, reward, True)]
-                P[s][LEFT] = [(1.0, s, reward, True)]
-            # Not a terminal state
-            else:
-                if y == 0 or is_water_tile(y - 1, x):
-                    ns_up = s
+            for action in actions:
+                action_scalar = actions.get(action)
+                if is_done(s):
+                    P[s][action_scalar] = [(1.0, s, reward, True)]
                 else:
-                    ns_up = s - MAX_X
-                P[s][UP] = [(1.0, ns_up, reward, is_done(y, x))]
+                    if action == 'UP':
+                        next_state_scalar = s if y == 0 else s - MAX_X
+                    elif action == 'DOWN':
+                        next_state_scalar = s if y == (MAX_Y - 1) else s + MAX_X
+                    elif action == 'RIGHT':
+                        next_state_scalar = s if x == (MAX_X - 1) else s + 1
+                    elif action == 'LEFT':
+                        next_state_scalar = s if x == 0 else s - 1
+                    else:
+                        print('non_default action, currently unable to handle; setting next state to current state')
+                        next_state_scalar = s
 
-                # ns_up = s if y == 0 or is_water_tile(y-1, x) else s - MAX_X
-                ns_right = s if x == (MAX_X - 1) or is_water_tile(y, x + 1) else s + 1
-                ns_down = s if y == (MAX_Y - 1) or is_water_tile(y + 1, x) else s + MAX_X
-                ns_left = s if x == 0 or is_water_tile(y, x - 1) else s - 1
-
-                P[s][RIGHT] = [(1.0, ns_right, reward, is_done(y, x))]
-                P[s][DOWN] = [(1.0, ns_down, reward, is_done(y, x))]
-                P[s][LEFT] = [(1.0, ns_left, reward, is_done(y, x))]
+                    P[s][action_scalar] = [(1.0, next_state_scalar, reward, is_done(s))]
 
             it.iternext()
 
@@ -187,39 +149,32 @@ class ShrineOfFiendsEnv(discrete.DiscreteEnv):
         self.P = P
 
         # self.s is the scalar value of the agent start point on initialization
-        self.s = 112
+        self.s = agent_start_state
 
-        super(ShrineOfFiendsEnv, self).__init__(nS, nA, P, isd)
+        super(GridWorld, self).__init__(nS, nA, P, isd)
 
     '''
     Prints a representation of the current environmental state
-    
+
     @param mode: doesn't actually seem to be used, probably related to metadata field on top. unclear to me what ansi is
                  as a representation mode, or why I would want to represent the environment in ansi
     '''
+
     def render(self, mode='human'):
         outfile = sys.stdout
 
+        output = " 0 "
         for s in range(self.nS):
             position = np.unravel_index(s, self.shape)
+            # output == " 0 "
             # Player character location
             if self.s == s:
                 output = " @ "
-            elif self.composite_grid[position[0]][position[1]] == 16:
-                '''
-                Reward point. For Shrine of Fiends test, we're going to hardcode this as the only 16 that showed up. This might not even be accurate, but it does enable testing in a vacuum
-                This, along with the character state identifications, is one of the core sensory heuristics I need to work on
-                '''
+            # Goal state
+            elif s == 47:
                 output = " * "
-            # # Water tiles. Impassible w/o boat
-            elif self.composite_grid[position[0]][position[1]] == 33:
-                output = " B "
-            # # Forest or meadows. Might have random encounters. Squares are passable
-            elif self.composite_grid[position[0]][position[1]] == 25 or self.composite_grid[position[0]][position[1]] == 26:
-                output = " G "
-            # Probably black, given the color's role in literally outlining the universe. these behave like green squares anyways
-            elif self.composite_grid[position[0]][position[1]] == 15:
-                output = " G "
+            else:
+                output = " 0 "
 
             if position[1] == 0:
                 output = output.lstrip()
@@ -229,3 +184,7 @@ class ShrineOfFiendsEnv(discrete.DiscreteEnv):
 
             outfile.write(output)
         outfile.write('\n')
+
+
+if __name__ == '__main__':
+    GridWorld().render()
