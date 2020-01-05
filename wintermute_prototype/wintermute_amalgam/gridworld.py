@@ -23,15 +23,24 @@ class GridWorld(discrete.DiscreteEnv):
     @param shape a tuple formatted [y, x] which is used to construct the scalar state ID matrix
     """
 
-    def __init__(self, actions=default_actions, shape=default_shape, terminal_state=47):
+    def __init__(self, actions=default_actions, shape=default_shape, terminal_state=47, initial_state=112):
         self.shape = np.array(shape)
 
         nS = np.prod(self.shape)
         nA = len(actions)
         self.terminal_state = terminal_state
+        self.max_y = self.shape[0]
+        self.max_x = self.shape[1]
 
         P = self.generate_transition_tuples(actions, nS)
 
+        '''
+        [0.00512821 0.00512821 ... 0.00512821] 195 times
+        
+        Same value repeated.
+        From where is this value derived? Not even sure how to phrase question of its relation with the divisor
+        What is it used for? suppose that will show up in discrete 
+        '''
         # Initial state distribution is uniform
         isd = np.ones(nS) / nS
 
@@ -41,14 +50,15 @@ class GridWorld(discrete.DiscreteEnv):
 
         # self.s is the scalar value of the agent start point on initialization
         # Still dealing with a jump, unsure of why
-        self.s = 112
 
         super(GridWorld, self).__init__(nS, nA, P, isd)
+        '''
+        Able to firmly plant the initial location by creating the discrete env first, then overriding the value it 
+        placed at S
+        '''
+        self.s = initial_state
 
     def generate_transition_tuples(self, actions, nS):
-        MAX_Y = self.shape[0]
-        MAX_X = self.shape[1]
-
         # Initialize transition probabilities and rewards
         P = {}
         '''
@@ -141,11 +151,11 @@ class GridWorld(discrete.DiscreteEnv):
                     P[s][action_scalar] = [(1.0, s, reward, True)]
                 else:
                     if action == 'UP':
-                        next_state_scalar = s if y == 0 else s - MAX_X
+                        next_state_scalar = s if y == 0 else s - self.max_x
                     elif action == 'DOWN':
-                        next_state_scalar = s if y == (MAX_Y - 1) else s + MAX_X
+                        next_state_scalar = s if y == (self.max_y - 1) else s + self.max_x
                     elif action == 'RIGHT':
-                        next_state_scalar = s if x == (MAX_X - 1) else s + 1
+                        next_state_scalar = s if x == (self.max_x - 1) else s + 1
                     elif action == 'LEFT':
                         next_state_scalar = s if x == 0 else s - 1
                     else:

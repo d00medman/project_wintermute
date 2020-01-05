@@ -179,7 +179,7 @@ class ShrineOfFiendsEnv(discrete.DiscreteEnv):
 
             it.iternext()
 
-        # Initial state distribution is uniform
+        # Initial state distribution is uniform TODO: what are implications of uniform intial state distribution?
         isd = np.ones(nS) / nS
 
         # We expose the model of the environment for educational purposes
