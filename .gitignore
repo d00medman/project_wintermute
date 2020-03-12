@@ -1,0 +1,16 @@
+*.pyc
+*.nes
+*.xml
+*.iml
+*.h5
+*.p
+wintermute_prototype_venv
+nintaco/logs
+nintaco/system
+nintaco/nintaco_resources
+train_melete/model_train_venv
+documentation
+open_questions.md
+data_sets/
+/train_melete/model_train_venv/
+/venv/
