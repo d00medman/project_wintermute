@@ -5,9 +5,7 @@
 *.h5
 *.p
 wintermute_prototype_venv
-nintaco/logs
-nintaco/system
-nintaco/nintaco_resources
+/nintaco/
 train_melete/model_train_venv
 documentation
 open_questions.md
