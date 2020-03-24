@@ -1,4 +1,9 @@
-import nintaco
+"""
+Not super pretty, but basically the only way I've been able to manage running both an externally controllable
+server in the same context as the internally oriented Nintaco.
+"""
+
+import wintermute.nes_environment.nintaco as nintaco
 import threading
 import time
 should_observe = False
@@ -127,11 +132,20 @@ class NES:
     def take_action(self, action):
         self.api.writeGamepad(0, action, True)
 
+
 emulator_thread = threading.Thread(target=NES, name='emulator_thread')
 emulator_thread.start()
 
 from flask import Flask
 app = Flask(__name__)
+
+
+'''
+Need to document both how to launch this and get the URL for the
+flask server that this sets up.
+'''
+
+LOCAL_SERVER_URL = 'http://127.0.0.1:5000/'
 
 @app.route('/observe')
 def observe():
@@ -149,3 +163,16 @@ def act(a):
     should_act = True
     time.sleep(.25)
     return 'execute'
+
+@app.route('/step/<a>')
+def step(a):
+    global should_act
+    global action
+    action = int(a)
+    should_act = True
+    time.sleep(.25)
+    global should_observe
+    global current_obs
+    should_observe = True
+    time.sleep(.25)
+    return str(current_obs)

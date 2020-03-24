@@ -1,4 +1,7 @@
-he formalization of moral decision making is the most important scientific question facing mankind. Should we induce an intelligence explosion without having done so, the existential risk to the Homo Sapien is disconcertingly high. Last October, it dawned on me that many modern role playing video games (RPGs) require the player to make moral decisions. It follows that an agent capable of playing games would provide invaluable data about the moral decision making of machines. I began to work on project Wintermute to pursue this insight. 
+# Project Wintermute
+#### Reinforcement learning applied to Role Playing Video games
+
+The formalization of moral decision making is the most important scientific question facing mankind. Should we induce an intelligence explosion without having done so, the existential risk to the Homo Sapien is disconcertingly high. Last October, it dawned on me that many modern role playing video games (RPGs) require the player to make moral decisions. It follows that an agent capable of playing games would provide invaluable data about the moral decision making of machines. I began to work on project Wintermute to pursue this insight. 
 
 Project Wintermute’s goal is to produce a Reinforcement Learning (RL) agent capable of playing the seminal 1988 RPG Final Fantasy. While Final Fantasy has a linear narrative, and thus no opportunity for moral decision making (the emulator technology needed to pursue such games simply does not exist at present), it is a highly complicated problem space. Producing agents to handle this space will require the same elements of high cognition which I believe play a critical role in moral decision making.
 
